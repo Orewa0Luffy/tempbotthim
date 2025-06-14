@@ -1,4 +1,6 @@
 import logging
+import os  # ✅ Added import for file operations
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler
 from config import BOT_TOKEN
