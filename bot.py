@@ -1,6 +1,5 @@
+import os
 import logging
-import os  # ✅ Added import for file operations
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler
 from config import BOT_TOKEN
@@ -37,7 +36,6 @@ async def create(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_data[user_id] = {"title": " ".join(context.args)}
 
-    # Send template options
     buttons = [
         [InlineKeyboardButton(name, callback_data=f"template_{key}")]
         for name, key in TEMPLATE_CHOICES.items()
@@ -47,7 +45,6 @@ async def create(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     user_id = query.from_user.id
 
     if query.data == "start_create":
@@ -86,6 +83,11 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text("Creating thumbnail...")
         output = generate_thumbnail(template, title, synopsis, image_path)
+
+        if not os.path.exists(output):
+            await update.message.reply_text("❌ Failed to generate thumbnail. Please try again.")
+            return
+
         await update.message.reply_photo(photo=open(output, 'rb'))
 
         # Cleanup
@@ -93,13 +95,11 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_handler))
     app.add_handler(CommandHandler("create", create))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.PHOTO, image_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
-
     print("Bot started...")
     app.run_polling()
